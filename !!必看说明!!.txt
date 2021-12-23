@@ -1,0 +1,17 @@
+需要自行打开属性管理器, 找到任意一个项目的debug中的Project Debug64和release中的Project Release64, 修改里面的CUDA Toolkit选项.
+另: 项目所有的配置都在这两个文件中, 可以参考.
+另: 新建项目的CUDA基本流程:
+     1. 配置上述属性文件到项目中(添加基本库, 链接库目录, 删除x86配置);
+     2. 配置生成属性, 添加CUDA;
+     3. 配置源码文件风格, .cuh为头文件, .cu为CUDA C/C++.
+参考: https://www.cnblogs.com/wayne793377164/p/8185404.html
+
+公共头文件说明:
+pj_common包含基本库;
+cu_common包含CUDA配置和说明;
+socket_common.h, socket_common.cpp是初步的Socket库, 内含基本说明.
+
+Socket库说明:
+Common文件夹内的socket_common.h和socket_common.cpp是初步的Socket库, 内含基本说明.
+根目录下的程序是测试用例, 传输数据就是64M
+调用代码在 Speed DbArray Sort 目录的 speed_sort_main.cpp 文件.
