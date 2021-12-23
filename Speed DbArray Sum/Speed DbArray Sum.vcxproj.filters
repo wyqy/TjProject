@@ -16,6 +16,9 @@
     <Filter Include="公共头文件">
       <UniqueIdentifier>{313bb2f1-6881-4b8b-8268-7cc2171d5a6e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="公共源文件">
+      <UniqueIdentifier>{b74a1d0c-db09-4dba-86e0-5a01337f0564}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\cu_common.cuh">
@@ -30,8 +33,8 @@
     <ClInclude Include="speed_sum.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="socket_sum.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="..\Common\socket_common.h">
+      <Filter>公共头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -46,8 +49,8 @@
     <ClCompile Include="speed_sum_main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="socket_sum.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="..\Common\socket_common.cpp">
+      <Filter>公共源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

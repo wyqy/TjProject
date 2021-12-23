@@ -23,11 +23,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="cuda_kernel.cu">
-      <Filter>源文件</Filter>
-    </CudaCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\Common\cu_common.cuh">
       <Filter>公共头文件</Filter>
     </ClInclude>

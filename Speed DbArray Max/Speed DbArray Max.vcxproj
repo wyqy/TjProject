@@ -86,12 +86,12 @@
   <ItemGroup>
     <ClInclude Include="..\Common\cu_common.cuh" />
     <ClInclude Include="..\Common\pj_common.h" />
+    <ClInclude Include="..\Common\socket_common.h" />
     <ClInclude Include="cuda_max.cuh" />
-    <ClInclude Include="socket_max.h" />
     <ClInclude Include="speed_max.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="socket_max.cpp" />
+    <ClCompile Include="..\Common\socket_common.cpp" />
     <ClCompile Include="speed_max.cpp" />
     <ClCompile Include="speed_max_main.cpp" />
   </ItemGroup>

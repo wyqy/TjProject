@@ -83,15 +83,15 @@
   <ItemGroup>
     <ClInclude Include="..\Common\cu_common.cuh" />
     <ClInclude Include="..\Common\pj_common.h" />
+    <ClInclude Include="..\Common\socket_common.h" />
     <ClInclude Include="cuda_sum.cuh" />
-    <ClInclude Include="socket_sum.h" />
     <ClInclude Include="speed_sum.h" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="cuda_sum.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="socket_sum.cpp" />
+    <ClCompile Include="..\Common\socket_common.cpp" />
     <ClCompile Include="speed_sum.cpp" />
     <ClCompile Include="speed_sum_main.cpp" />
   </ItemGroup>

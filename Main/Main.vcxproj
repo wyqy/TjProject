@@ -84,9 +84,6 @@
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="cuda_kernel.cu" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\Common\cu_common.cuh" />
     <ClInclude Include="..\Common\pj_common.h" />
   </ItemGroup>

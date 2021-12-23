@@ -1,6 +1,6 @@
 #pragma once
 #include "pj_common.h"
-#include "socket_max.h"
+#include "socket_common.h"
 #include "cuda_max.cuh"
 
 // µ÷ÓÃSIMDÖ¸Áî¿â

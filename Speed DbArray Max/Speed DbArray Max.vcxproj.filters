@@ -16,6 +16,9 @@
     <Filter Include="公共头文件">
       <UniqueIdentifier>{5047a7be-5c20-4f76-9a65-0e46d0ba92cf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="公共源文件">
+      <UniqueIdentifier>{883c69d1-cc87-4cb5-84a4-52d96072b3bb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="cuda_max.cu">
@@ -24,9 +27,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="speed_max.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="socket_max.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\Common\cu_common.cuh">
@@ -38,6 +38,9 @@
     <ClInclude Include="cuda_max.cuh">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\Common\socket_common.h">
+      <Filter>公共头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="speed_max.cpp">
@@ -46,8 +49,8 @@
     <ClCompile Include="speed_max_main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="socket_max.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="..\Common\socket_common.cpp">
+      <Filter>公共源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

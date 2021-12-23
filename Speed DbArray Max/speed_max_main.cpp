@@ -14,17 +14,9 @@ int main()
     duration<double> diff;
     wcout.imbue(locale("chs"));
  
-    float locRetValue = 0;
-    float rmtRetValue = 0;
-
-    int* recvTypeHeap = new int;
-    int* recvLenHeap = new int;
-    int* socketIntHeap = new int;
-    float* socketFloatHeap = new float;
-    *recvTypeHeap = 0;
-    *recvLenHeap = 0;
-    *socketIntHeap = 0;
-    *socketFloatHeap = 0.0f;
+    float locRetValue = 0.0f;
+    float rmtRetValue = 0.0f;
+    int socketRetStatus = 0;
 
     cudaError_t cudaStatus;
 
@@ -110,29 +102,25 @@ int main()
             {
                 // 多机准备
                 // 发送初始化命令至客户端
-                *socketIntHeap = 1000;
-                SendCommand(socketconfig, COMMAND_INT, sizeof(int), socketIntHeap);
+                SendInt(socketconfig, 1000);
                 // 己方初始化
                 retValue = init_arithmetic(locFloatData, (float)1, SGLE_DATANUM);  // 初始化多机数据!
                 // 等待对方结果
-                RecvCommand(socketconfig, recvTypeHeap, recvLenHeap, socketIntHeap);
-                if (*socketIntHeap != 1000) break;
+                socketRetStatus = RecvInt(socketconfig);
+                if (socketRetStatus != 1000) break;
 
                 for (size_t iter = 1; iter <= 5; iter++)
                 {
                     // 执行
                     start_time = system_clock::now();
                     // 发送执行命令至客户端
-                    *socketIntHeap = 1001;
-                    SendCommand(socketconfig, COMMAND_INT, sizeof(int), socketIntHeap);
+                    SendInt(socketconfig, 1001);
                     // 执行己方计算
                     locRetValue = maxSpeedUp(locFloatData, (size_t)SGLE_DATANUM);      // CUDA加速
                     // 发送己方数据
-                    *socketFloatHeap = locRetValue;
-                    SendCommand(socketconfig, COMMAND_FLOAT, sizeof(float), socketFloatHeap);
+                    SendFloat(socketconfig, locRetValue);
                     // 等待对方结果
-                    RecvCommand(socketconfig, recvTypeHeap, recvLenHeap, socketFloatHeap);
-                    rmtRetValue = *socketFloatHeap;
+                    rmtRetValue = RecvFloat(socketconfig);
                     // 合并二者数据
                     retValue = locRetValue > rmtRetValue ? locRetValue : rmtRetValue;
                     // 计算完毕
@@ -143,36 +131,33 @@ int main()
                     wcout << L"第" << iter << L"次: 耗时(秒): " << durationSecond;
                     wcout << L"; 最大值为: " << fixed << retValue << endl;
                     // 接收同步指令
-                    RecvCommand(socketconfig, recvTypeHeap, recvLenHeap, socketIntHeap);
-                    if (*socketIntHeap != 1002) break;
+                    socketRetStatus = RecvInt(socketconfig);
+                    if (socketRetStatus != 1002) break;
                 }
             }
             else if (socket_type == 2)
             {
                 // 多机准备
                 // 接收来自服务器的初始化命令
-                RecvCommand(socketconfig, recvTypeHeap, recvLenHeap, socketIntHeap);
-                if (*socketIntHeap != 1000) break;
+                socketRetStatus = RecvInt(socketconfig);
+                if (socketRetStatus != 1000) break;
                 // 己方初始化
                 retValue = init_arithmetic(locFloatData, (float)SGLE_DATANUM, SGLE_DATANUM);  // 初始化多机数据!
                 // 发送己方结果
-                *socketIntHeap = 1000;
-                SendCommand(socketconfig, COMMAND_INT, sizeof(int), socketIntHeap);
+                SendInt(socketconfig, 1000);
 
                 for (size_t iter = 1; iter <= 5; iter++)
                 {
                     // 执行
                     start_time = system_clock::now();
                     // 接收来自服务器的执行命令
-                    RecvCommand(socketconfig, recvTypeHeap, recvLenHeap, socketIntHeap);
-                    // // 执行己方计算
-                    if (*socketIntHeap == 1001) locRetValue = maxSpeedUp(locFloatData, (size_t)SGLE_DATANUM);  // CUDA加速
+                    socketRetStatus = RecvInt(socketconfig);
+                    // 执行己方计算
+                    if (socketRetStatus == 1001) locRetValue = maxSpeedUp(locFloatData, (size_t)SGLE_DATANUM);  // CUDA加速
                     // 发送己方数据
-                    *socketFloatHeap = locRetValue;
-                    SendCommand(socketconfig, COMMAND_FLOAT, sizeof(float), socketFloatHeap);
+                    SendFloat(socketconfig, locRetValue);
                     // 等待对方结果
-                    RecvCommand(socketconfig, recvTypeHeap, recvLenHeap, socketFloatHeap);
-                    rmtRetValue = *socketFloatHeap;
+                    rmtRetValue = RecvFloat(socketconfig); 
                     // 合并二者数据
                     retValue = locRetValue > rmtRetValue ? locRetValue : rmtRetValue;
                     // 计算完毕
@@ -183,16 +168,13 @@ int main()
                     wcout << L"第" << iter << L"次: 耗时(秒): " << durationSecond;
                     wcout << L"; 最大值为: " << fixed << retValue << endl;
                     // 发送同步指令
-                    *socketIntHeap = 1002;
-                    SendCommand(socketconfig, COMMAND_INT, sizeof(int), socketIntHeap);
+                    SendInt(socketconfig, 1002);
                 }
             }
             
             // 释放堆内存
             delete[] socket_ip;
-            // 关闭连接
-            EndCommand(socketconfig);
-            // 清理Socket相关量
+            // 关闭Socket
             CloseSocket(socketconfig);
             break;
         default:
@@ -204,10 +186,6 @@ int main()
     cudaStatus = releaseCuda();  // 释放CUDA
 
 InitError:
-    delete recvTypeHeap;
-    delete recvLenHeap;
-    delete socketIntHeap;
-    delete socketFloatHeap;
     system("pause");
     return 0;
 }
