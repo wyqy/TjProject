@@ -8,6 +8,7 @@ int main()
 {
     // 界面输入输出变量
     int main_entered;
+    bool isValid = 0;
     float retValue = 0;
     double durationSecond = 0;
     wcout.imbue(locale("chs"));
@@ -25,9 +26,10 @@ int main()
     // cuda变量
     cudaError_t cudaStatus;
 
-    wcout << L"初始化, 请稍候...";
+
     // 本机准备
-    retValue = init_arithmetic(rawFloatData, (float)1, DUAL_DATANUM);  // 初始化本机数据!
+    wcout << L"顺序初始化, 请稍候...";
+    // retValue = init_arithmetic(rawFloatData, (float)1, DUAL_DATANUM);  // 初始化本机数据!
     system("cls");
 
     while (true)
@@ -38,32 +40,43 @@ int main()
         //            1. 双机加速实现; \n\
         //            4. 退出. \n\
         //            请输入选项: ";
-        wcout << L"数组传输测试: \n\
-                    1. 测试; \n\
-                    2. 退出. \n\
+        wcout << L"单精度浮点数数组排序测试: \n\
+                    1. 原始做法; \n\
+                    2. 本机加速; \n\
+                    3. 多机加速; \n\
+                    4. 多机传输测试; \n\
+                    5. 退出. \n\
                     请输入选项: ";
         wcin >> main_entered;
-        if (main_entered == 2) break;
+        if (main_entered == 5) break;
 
         switch (main_entered)
         {
-        // case 1:
-        //     for (size_t iter = 1; iter <= 5; iter++)
-        //     {
-        //         // 执行
-        //         start_time = system_clock::now();
-        //         // retValue = sumNaive(rawFloatData, (size_t)DUAL_DATANUM);  // 原始代码实现
-        //         end_time = system_clock::now();
-        //         diff = end_time - start_time;
-        //         durationSecond = diff.count();
-        //         // 显示
-        //         wcout << L"第" << iter << L"次: 耗时(秒): " << durationSecond;
-        //         wcout << L"; 最大值为: " << fixed << retValue << endl;
-        //     }
-        //     break;
+        case 1:
+            for (size_t iter = 1; iter <= 5; iter++)
+            {
+                // 打乱顺序
+                wcout << L"随机排列, 请稍候...";
+                retValue = init_arithmetic(rawFloatData, (float)1, DUAL_DATANUM);  // 初始化本机数据!
+                retValue = init_random(rawFloatData, DUAL_DATANUM);  // 初始化本机数据!
+                // 执行
+                wcout << L"完成! 排序中... ";
+                start_time = system_clock::now();
+                retValue = sortNaive(rawFloatData, (size_t)DUAL_DATANUM);  // 原始代码实现
+                end_time = system_clock::now();
+                diff = end_time - start_time;
+                durationSecond = diff.count();
+                wcout << L"第" << iter << L"次: 耗时(秒): " << durationSecond << L"; 验证中...";
+                // 验证
+                retValue = postProcess(rawFloatData, DUAL_DATANUM);
+                isValid = validSort(rawFloatData, (size_t)DUAL_DATANUM);  // 验证
+                if (isValid) wcout << L"完成! 排序结果正确! " << fixed << retValue << endl;
+                else wcout << L"完成! 排序结果错误! " << fixed << retValue << endl;
+            }
+            break;
         // case 2:
         //     break;
-        case 1:
+        case 4:
             // 多机准备
             int socket_type;                        // 通信类型: 1 = 服务器; 2 = 客户端
             char* socket_ip;                        // Socket IP
@@ -97,21 +110,19 @@ int main()
             {
                 // 多机准备
                 // 发送初始化命令至客户端
-                SendInt(socketconfig, 1000);
+                SendInt(socketconfig, 2000);
                 // 己方初始化
                 retValue = init_arithmetic(locFloatData, (float)1, SGLE_DATANUM);  // 初始化多机数据!
                 // 等待对方结果
                 socketRetStatus = RecvInt(socketconfig);
-                if (socketRetStatus != 1000) break;
+                if (socketRetStatus != 2000) break;
 
                 for (size_t iter = 1; iter <= 2; iter++)
                 {
                     // 执行
                     start_time = system_clock::now();
                     // 发送执行命令至客户端
-                    SendInt(socketconfig, 1001);
-                    // 执行己方计算(分类讨论)
-                    // 略
+                    SendInt(socketconfig, 2001);
                     // 发送己方数据
                     SendFloatPtr(socketconfig, locFloatData, SGLE_DATANUM);
                     // 等待对方结果
@@ -127,7 +138,7 @@ int main()
                     wcout << L"; 结果为(应当为128M): " << fixed << retValue << endl;
                     // 接收同步指令
                     socketRetStatus = RecvInt(socketconfig);
-                    if (socketRetStatus != 1002) break;
+                    if (socketRetStatus != 2002) break;
                 }
             }
             else if (socket_type == 2)
@@ -135,11 +146,11 @@ int main()
                 // 多机准备
                 // 接收来自服务器的初始化命令
                 socketRetStatus = RecvInt(socketconfig);
-                if (socketRetStatus != 1000) break;
+                if (socketRetStatus != 2000) break;
                 // 己方初始化
                 retValue = init_arithmetic(locFloatData, (float)SGLE_DATANUM, SGLE_DATANUM);  // 初始化多机数据!
                 // 发送己方结果
-                SendInt(socketconfig, 1000);
+                SendInt(socketconfig, 2000);
 
                 for (size_t iter = 1; iter <= 2; iter++)
                 {
@@ -147,8 +158,7 @@ int main()
                     start_time = system_clock::now();
                     // 接收来自服务器的执行命令
                     socketRetStatus = RecvInt(socketconfig);
-                    // 执行己方计算(分类讨论)
-                    // 略
+                    if (socketRetStatus != 2001) break;
                     // 发送己方数据
                     SendFloatPtr(socketconfig, locFloatData, SGLE_DATANUM);
                     // 等待对方结果
@@ -163,7 +173,7 @@ int main()
                     wcout << L"第" << iter << L"次: 耗时(秒): " << durationSecond;
                     wcout << L"; 结果为(应当为64M): " << fixed << retValue << endl;
                     // 发送同步指令
-                    SendInt(socketconfig, 1002);
+                    SendInt(socketconfig, 2002);
                 }
             }
 

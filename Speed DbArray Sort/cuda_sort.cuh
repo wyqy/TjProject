@@ -10,8 +10,12 @@ using std::max;
 
 // µ÷ÓÃº¯Êý
 __host__ cudaError_t initialCuda(int device);
-__host__ cudaError_t sumWithCuda(float* retValue, size_t* retLen, const float* data, size_t len);
+__host__ cudaError_t sortWithCuda(float* retValue, size_t* retLen, const float* data, size_t len);
 __host__ cudaError_t releaseCuda(void);
+
+// ¸¨ÖúHost Function
+__host__ size_t paddingSize(size_t len);
+__host__ size_t fastIntLog(size_t x);
 
 // CUDA Kernel
 __global__ void readKernel(float* retValue, const float* data);

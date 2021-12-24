@@ -36,9 +36,15 @@
     <ClInclude Include="..\Common\socket_common.h">
       <Filter>公共头文件</Filter>
     </ClInclude>
+    <ClInclude Include="cuda_logsqrt.cuh">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="cuda_sort.cu">
+      <Filter>源文件</Filter>
+    </CudaCompile>
+    <CudaCompile Include="cuda_logsqrt.cu">
       <Filter>源文件</Filter>
     </CudaCompile>
   </ItemGroup>

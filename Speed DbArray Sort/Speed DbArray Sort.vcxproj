@@ -84,10 +84,12 @@
     <ClInclude Include="..\Common\cu_common.cuh" />
     <ClInclude Include="..\Common\pj_common.h" />
     <ClInclude Include="..\Common\socket_common.h" />
+    <ClInclude Include="cuda_logsqrt.cuh" />
     <ClInclude Include="cuda_sort.cuh" />
     <ClInclude Include="speed_sort.h" />
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="cuda_logsqrt.cu" />
     <CudaCompile Include="cuda_sort.cu" />
   </ItemGroup>
   <ItemGroup>
