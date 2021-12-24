@@ -2,6 +2,7 @@
 #include "pj_common.h"
 #include "socket_common.h"
 #include "cuda_sort.cuh"
+#include "cuda_logsqrt.cuh"
 
 // 调用SIMD指令库
 #include <intrin.h>
@@ -26,6 +27,7 @@ using std::stack;
 #define DUAL_DATANUM TEST_DUAL_DATANUM
 #define SGLE_DATANUM TEST_SGLE_DATANUM
 // 定义
+extern float disorderData[DUAL_DATANUM];
 extern float rawFloatData[DUAL_DATANUM];
 extern float locFloatData[SGLE_DATANUM];
 extern float rmtFloatData[SGLE_DATANUM];
@@ -43,14 +45,16 @@ float init_random(float data[], const size_t len);
 float init_arithmetic(float data[], float start, const size_t len);
 
 // 定义功能函数
-// 传统
+// 传统排序
 float sortNaive(float data[], size_t len);
-// 加速
+// 传统结果处理(将原数组变换为log(sqrt()))
+float postProcess(float data[], size_t len);
+// 加速排序
 float sortSpeedup(float data[], size_t len);
+// 加速结果处理
+float postSpeedup(float data[], size_t len);
 // 合并
 float sortMerge(float dataRes[], float dataA[], size_t lenA, float dataB[], size_t lenB);
-// 结果处理(将原数组变换为log(sqrt()))
-float postProcess(float data[], size_t len);
 // 验证
 bool validSort(const float data[], size_t len);
 

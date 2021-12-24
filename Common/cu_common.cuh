@@ -30,5 +30,7 @@
 // CUDA 编程优化:   https://www.zhihu.com/column/c_1188568938097819648
 // CUDA 流与异步: https://blog.csdn.net/u010335328/article/details/52453499
 // CUDA 并行同步: https://blog.csdn.net/weixin_37804469/article/details/103659411
+// CUDA 配置参数: https://blog.csdn.net/fuxiaoxiaoyue/article/details/83782167
+// CUDA 内存传输: https://zhuanlan.zhihu.com/p/188246455
 // Nsight 的使用: https://blog.csdn.net/yan31415/article/details/109491749
 

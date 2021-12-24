@@ -73,20 +73,6 @@ float sortNaive(float data[], const size_t len)
 }
 
 
-float sortSpeedup(float data[], const size_t len)
-{
-    // 使用基于CUDA的双调排序?
-    return 0;
-}
-
-
-float sortMerge(float dataRes[], const float dataA[], const size_t lenA, const float dataB[], const size_t lenB)
-{
-    // 基于归并合并两个有序数组
-    return 0;
-}
-
-
 float postProcess(float data[], const size_t len)
 {
     // 简单并行
@@ -99,6 +85,47 @@ float postProcess(float data[], const size_t len)
     }
 
     return data[len - 1];
+}
+
+
+float sortSpeedup(float data[], const size_t len)
+{
+    sortWithCuda(data, len);  // 原始代码实现
+
+    return data[len - 1];
+}
+
+
+float postSpeedup(float data[], size_t len)
+{
+    logsqrtWithCuda(data, len);
+
+    return data[len - 1];
+}
+
+
+float sortMerge(float dataRes[], float dataA[], size_t lenA, float dataB[], size_t lenB)
+{
+    // 基于归并合并两个有序数组, 简单串行算法
+    size_t dataResOffset = 0, dataAOffset = 0, dataBOffset = 0;
+
+    while (dataAOffset < lenA || dataBOffset < lenB)
+    {
+        if (dataBOffset == lenB || (dataAOffset < lenA && dataA[dataAOffset] < dataB[dataBOffset]))
+        {
+            dataRes[dataResOffset] = dataA[dataAOffset];
+            dataResOffset += 1;
+            dataAOffset += 1;
+        }
+        else
+        {
+            dataRes[dataResOffset] = dataB[dataBOffset];
+            dataResOffset += 1;
+            dataBOffset += 1;
+        }
+    }
+
+    return dataRes[0];
 }
 
 
@@ -122,6 +149,7 @@ bool validSort(const float data[], const size_t len)
         summary += unvalidCount[iter_sum];
     }
 
+    delete[] unvalidCount;
     return summary == 0;
 }
 

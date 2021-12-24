@@ -9,7 +9,7 @@ using std::max;
 #define BLOCK_DIMONE_x1024 ((unsigned int)1024)
 
 // µ÷ÓÃº¯Êý
-__host__ cudaError_t initialCuda(int device);
+__host__ cudaError_t initialCuda(int device, float* arrRaw, size_t lenRaw, float* arrLoc, size_t lenLoc);
 __host__ cudaError_t sumWithCuda(float* retValue, size_t* retLen, const float* data, size_t len);
 __host__ cudaError_t releaseCuda(void);
 

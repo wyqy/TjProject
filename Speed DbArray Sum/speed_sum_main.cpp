@@ -14,8 +14,8 @@ int main()
     duration<double> diff;
     wcout.imbue(locale("chs"));
 
-    float locRetValue = 0;
-    float rmtRetValue = 0;
+    float locRetValue = 0.0f;
+    float rmtRetValue = 0.0f;
     int socketRetStatus = 0;
 
     cudaError_t cudaStatus;
@@ -23,6 +23,9 @@ int main()
     wcout << L"初始化, 请稍候...";
     // 本机准备
     retValue = init_arithmetic(rawFloatData, (float)1, DUAL_DATANUM);  // 初始化本机数据!
+    cudaStatus = initialCuda(0, rawFloatData, DUAL_DATANUM, locFloatData, SGLE_DATANUM);  // 初始化CUDA, 对于多GPU系统请修改!
+    if (cudaStatus != cudaSuccess) goto InitError;
+
     system("cls");
 
     while (true)
@@ -55,9 +58,7 @@ int main()
             }
             break;
         case 2:  // 2, 3 代码雷同, 因此简化
-            if (main_entered == 2) cudaStatus = initialCuda(0);  // 对于多GPU系统请修改!
-            if (cudaStatus != cudaSuccess) goto InitError;
-            [[fallthrough]];
+            // [[fallthrough]];
         case 3:
             for (size_t iter = 1; iter <= 5; iter++)
             {
@@ -72,13 +73,9 @@ int main()
                 wcout << L"第" << iter << L"次: 耗时(秒): " << durationSecond;
                 wcout << L"; 总和为: " << fixed << retValue << endl;
             }
-            // 关闭Cuda
-            if (main_entered == 2) cudaStatus = releaseCuda();  // 释放CUDA
             break;
         case 4:  // 4, 5 代码雷同, 因此简化
-            if (main_entered == 4) cudaStatus = initialCuda(0);  // 对于多GPU系统请修改!
-            if (cudaStatus != cudaSuccess) goto InitError;
-            [[fallthrough]];
+            // [[fallthrough]];
         case 5:
             // 多机准备
             int socket_type;                        // 通信类型: 1 = 服务器; 2 = 客户端
@@ -192,8 +189,6 @@ int main()
             delete[] socket_ip;
             // 关闭Socket
             CloseSocket(socketconfig);
-            // 关闭Cuda
-            if (main_entered == 4) cudaStatus = releaseCuda();  // 释放CUDA
             break;
         default:
             durationSecond = 0;
@@ -202,6 +197,7 @@ int main()
     }
 
 InitError:
+    cudaStatus = releaseCuda();  // 释放CUDA
     system("pause");
     return 0;
 }

@@ -1,6 +1,6 @@
 #include "cuda_sum.cuh"
 
-__host__ cudaError_t initialCuda(int device)
+__host__ cudaError_t initialCuda(int device, float* arrRaw, size_t lenRaw, float* arrLoc, size_t lenLoc)
 {
     // 初始化CUDA设备, 线程级别!
     cudaError_t cudaStatus;
@@ -17,6 +17,16 @@ __host__ cudaError_t initialCuda(int device)
         fprintf(stderr, "\n[Error] cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?\n");
     }
 
+    // 初始化锁页内存
+    cudaStatus = cudaHostRegister(arrRaw, lenRaw * sizeof(float), cudaHostAllocMapped);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "\n[Error] cudaHostRegister for arrRaw failed!\n");
+    }
+    cudaStatus = cudaHostRegister(arrLoc, lenLoc * sizeof(float), cudaHostAllocMapped);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "\n[Error] cudaHostRegister for arrLoc failed!\n");
+    }
+
     return cudaStatus;
 }
 
@@ -27,7 +37,7 @@ __host__ cudaError_t sumWithCuda(float* retValue, size_t* retLen, const float* d
     float* nowDataA = nullptr;
     float* nowDataB = nullptr;
     float* nowResult = nullptr;
-    bool   isLastResultAMalloc = false;
+    bool   isLastResultMalloc = false;
     bool   isNowResultMalloc = false;
 
     bool isOdd = false;
@@ -60,20 +70,15 @@ __host__ cudaError_t sumWithCuda(float* retValue, size_t* retLen, const float* d
     resMemLen = max((size_t)(dimGrid.x * dimBlock.x), resDataLen);
 
 
-    // 拷入操作数据: host -> device
-    // 初始化lastResult内存
-    cudaStatus = cudaMalloc((void**)&lastResult, resMemLen * sizeof(float));
+    // 初始化操作数据: host -> device
+    // 初始化lastResult内存, 零拷贝加速!
+    cudaStatus = cudaHostGetDevicePointer<float>(&lastResult, const_cast<float*>(data), 0);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "\n[Error] cudaMalloc failed for source!\n");
+        fprintf(stderr, "\n[Error] cudaHostGetDevicePointer failed for source!\n");
         goto Error;
     }
-    else isLastResultAMalloc = true;
-    // 拷贝lastResult内存
-    cudaStatus = cudaMemcpy(lastResult, data, wholeDataLen * sizeof(float), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "\n[Error] cudaMemcpy failed when copy dataA for the first time!\n");
-        goto Error;
-    }
+
+
     // 操作数处理
     nowDataA = lastResult;
     nowDataB = lastResult + opDataLen;
@@ -119,14 +124,15 @@ __host__ cudaError_t sumWithCuda(float* retValue, size_t* retLen, const float* d
 
         // 操作数内存处理
         // 释放lastResult内存
-        cudaStatus = cudaFree(lastResult);
+        if (isLastResultMalloc) cudaStatus = cudaFree(lastResult);
         if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "\n[Error] cudaFree failed for lastResult!\n");
             goto Error;
         }
-        else isLastResultAMalloc = false;
+        else isLastResultMalloc = false;
         // 重定向内存
         lastResult = nowResult;
+        isLastResultMalloc = true;
         nowResult = nullptr;
         isNowResultMalloc = false;
         // 操作数处理
@@ -192,7 +198,7 @@ __host__ cudaError_t sumWithCuda(float* retValue, size_t* retLen, const float* d
 
     // 释放指针所指内存!
 Error:
-    if (isLastResultAMalloc) cudaFree(lastResult);
+    if (isLastResultMalloc) cudaFree(lastResult);
     if (isNowResultMalloc) cudaFree(nowResult);
 
     return cudaStatus;
@@ -216,7 +222,7 @@ __global__ void readKernel(float* retValue, const float* data)
     // 定位
     unsigned int thIndexX = blockIdx.x * blockDim.x + threadIdx.x;
     // 计算
-    retValue[thIndexX] = log(sqrt(data[thIndexX]));
+    retValue[thIndexX] = logf(sqrtf(data[thIndexX]));
 }
 
 

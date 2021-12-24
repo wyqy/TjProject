@@ -27,7 +27,7 @@ __host__ cudaError_t maxWithCuda(float* retValue, size_t* retLen, const float* d
     float* nowDataA = nullptr;
     float* nowDataB = nullptr;
     float* nowResult = nullptr;
-    bool   isLastResultAMalloc = false;
+    bool   isLastResultMalloc = false;
     bool   isNowResultMalloc = false;
 
     bool isOdd = false;
@@ -67,11 +67,11 @@ __host__ cudaError_t maxWithCuda(float* retValue, size_t* retLen, const float* d
         fprintf(stderr, "\n[Error] cudaMalloc failed for source!\n");
         goto Error;
     }
-    else isLastResultAMalloc = true;
+    else isLastResultMalloc = true;
     // 拷贝lastResult内存
     cudaStatus = cudaMemcpy(lastResult, data, wholeDataLen * sizeof(float), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "\n[Error] cudaMemcpy failed when copy dataA for the first time!\n");
+        fprintf(stderr, "\n[Error] cudaMemcpy failed when copying for the first time!\n");
         goto Error;
     }
     // 操作数处理
@@ -124,7 +124,7 @@ __host__ cudaError_t maxWithCuda(float* retValue, size_t* retLen, const float* d
             fprintf(stderr, "\n[Error] cudaFree failed for lastResult!\n");
             goto Error;
         }
-        else isLastResultAMalloc = false;
+        else isLastResultMalloc = false;
         // 重定向内存
         lastResult = nowResult;
         nowResult = nullptr;
@@ -192,7 +192,7 @@ __host__ cudaError_t maxWithCuda(float* retValue, size_t* retLen, const float* d
 
     // 释放指针所指内存!
 Error:
-    if (isLastResultAMalloc) cudaFree(lastResult);
+    if (isLastResultMalloc) cudaFree(lastResult);
     if (isNowResultMalloc) cudaFree(nowResult);
 
     return cudaStatus;
