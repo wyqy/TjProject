@@ -5,7 +5,7 @@
 using std::max;
 
 // ∂®“Â∫Í
-#define CUDA_MAX_RESLEN ((size_t)128)
+#define BLOCK_DIMONE_pow9 ((unsigned int)9)
 #define BLOCK_DIMONE_x512 ((unsigned int)512)
 #define WRAP_DIM ((unsigned int)32)
 

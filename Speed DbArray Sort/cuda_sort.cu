@@ -87,7 +87,7 @@ __host__ cudaError_t sortWithCuda(float* data, size_t len)
     //  对于运行时参数问题, 需要结合内存局部性问题考虑!
     //      循环1: 决定每个双调序列的半长度, 设为iter_i, 从2开始, 每次<<1, 到len结束(此时len长度为单调, 等价双调序列长度为2*len);
     //          循环2: 决定为了使每个iter_i长的序列有序, 需要进行的log2(iter_i)轮排序中, 每轮排序的单位长度(下面会说明),
-    //                 设为iter_j, 从iter_i>>1开始, 每次>>1, 到2结束;
+    //                 设为iter_j, 从iter_i>>1开始, 每次>>1, 到1结束;
     //              操作3: 决定参与排序的并发线程;
     //                     1.   为了方便调度, 令全部元素都作为一个线程参与排序, 但在排序线程函数中判断是否真正参与排序,
     //                          可以使用位运算判断!
@@ -140,15 +140,24 @@ __host__ cudaError_t releaseCuda(void)
 
 __host__ size_t paddingSize(size_t len)
 {
-    // 返回满足2^k >= n的最小整数k对应的2^k.
-    // 0检查
+    // 返回内存大小
+    size_t retValue;
+
+    // 考虑基础双调排序的要求, 扩充为2的整数幂
     if (len == 0) return 0;
     // 快速整数对数
-    size_t retValue = fastIntLog(len);
-    // 余数检查
+    retValue = fastIntLog(len);
+    // 计算满足2^k >= n的最小整数k
     if ((((size_t)1 << retValue) - len) != 0) retValue += 1;
-    // 计算size
-    return ((size_t)1) << retValue;
+    // 计算此时尺寸
+    retValue = ((size_t)1) << retValue;
+
+    // 考虑thread block的大小, 扩充为至少一个block
+    // 计算内存size
+    retValue = retValue > BLOCK_DIMONE_x512 ? retValue : BLOCK_DIMONE_x512;
+
+    // 返回
+    return retValue;
 }
 
 
@@ -172,16 +181,12 @@ __host__ void bitonicSort(float* data, unsigned int len, cudaError_t* cudaRetVal
 
     dim3 dimGrid(1);
     dim3 dimBlock(BLOCK_DIMONE_x512);
-    unsigned int sharedMemSize = BLOCK_DIMONE_x512 * sizeof(float);
+    unsigned int sharedMemSize = BLOCK_DIMONE_x512 * sizeof(float);  // 只缓存(操作数的)一半
 
     cudaError_t cudaStatus;
 
-    // 计算运行配置数
-    dimGrid.x = (len % BLOCK_DIMONE_x512 != 0) ? (len / BLOCK_DIMONE_x512 + 1) : (len / BLOCK_DIMONE_x512);
-    if (len < BLOCK_DIMONE_x512) dimBlock.x = len;
-    else dimBlock.x = BLOCK_DIMONE_x512;
-    // 计算共享内存大小, 只缓存(操作数的)一半
-    sharedMemSize = dimBlock.x * sizeof(float);
+    // 计算运行配置数(确定是512的倍数)
+    dimGrid.x = len / BLOCK_DIMONE_x512;
 
     
     // 排序(原理详见前)

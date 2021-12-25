@@ -1,6 +1,6 @@
 #include "speed_sort.h"
 
-float disorderData[DUAL_DATANUM];
+__declspec(align(MEMORY_ALIGNED)) float disorderData[DUAL_DATANUM];
 __declspec(align(MEMORY_ALIGNED)) float rawFloatData[DUAL_DATANUM];
 __declspec(align(MEMORY_ALIGNED)) float locFloatData[SGLE_DATANUM];
 __declspec(align(MEMORY_ALIGNED)) float rmtFloatData[SGLE_DATANUM];

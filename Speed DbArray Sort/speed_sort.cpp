@@ -6,12 +6,12 @@ float init_random(float data[], const size_t len)
     // 顺序shuffle, 随机生成交换数的index
     random_device rdev;  // 随机数生成设备
     mt19937 rengine(rdev());  // 随机数生成引擎
-    uniform_int_distribution<size_t> rdistrib(0, len);  // 随机分布, 左闭右开
+    uniform_int_distribution<size_t> rdistrib(0, len - 1);  // 随机分布, 左闭右闭?
     size_t shuffleLoc = 0;
 
     for (size_t iter_rand = 0; iter_rand < len - 1; iter_rand++)
     {
-        rdistrib.param(uniform_int<size_t>::param_type(iter_rand + 1, len));
+        rdistrib.param(uniform_int<size_t>::param_type(iter_rand + 1, len - 1));
         shuffleLoc = rdistrib(rengine);
         atomFloatSwap(data + iter_rand, data + shuffleLoc);
     }

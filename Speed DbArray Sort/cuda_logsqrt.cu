@@ -5,7 +5,6 @@ __host__ cudaError_t logsqrtWithCuda(float* data, size_t len)
     float* gpuMemPtr = nullptr;
     bool   isGpuMemMalloc = false;
 
-    bool isOdd = false;
     size_t opMemLen = 0;
 
     dim3 dimBlock(BLOCK_DIMONE_x1024);
