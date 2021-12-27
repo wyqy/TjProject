@@ -25,7 +25,6 @@ int main()
     retValue = init_arithmetic(rawFloatData, (float)1, DUAL_DATANUM);  // 初始化本机数据!
     cudaStatus = initialCuda(0, rawFloatData, DUAL_DATANUM, locFloatData, SGLE_DATANUM);  // 初始化CUDA, 对于多GPU系统请修改!
     if (cudaStatus != cudaSuccess) goto InitError;
-
     system("cls");
 
     while (true)

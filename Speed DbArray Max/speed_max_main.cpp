@@ -1,7 +1,7 @@
 #include "speed_max.h"
 
-float rawFloatData[DUAL_DATANUM];
-float locFloatData[SGLE_DATANUM];
+__declspec(align(MEMORY_ALIGNED)) float rawFloatData[DUAL_DATANUM];
+__declspec(align(MEMORY_ALIGNED)) float locFloatData[SGLE_DATANUM];
 
 int main()
 {
@@ -23,7 +23,7 @@ int main()
     wcout << L"初始化, 请稍候...";
     // 本机准备
     retValue = init_arithmetic(rawFloatData, (float)1, DUAL_DATANUM);  // 初始化本机数据!
-    cudaStatus = initialCuda(0);                             // 对于多GPU系统请修改!
+    cudaStatus = initialCuda(0, rawFloatData, DUAL_DATANUM, locFloatData, SGLE_DATANUM);  // 对于多GPU系统请修改!
     if (cudaStatus != cudaSuccess) goto InitError;
     system("cls");
 
@@ -32,11 +32,13 @@ int main()
         wcout << L"\n单精度数组寻找最大值基准时间测试(5 次): \n\
                    1. 原始代码实现; \n\
                    2. CUDA + AVX加速实现; \n\
-                   3. CUDA + AVX + Socket加速实现; \n\
-                   4. 退出. \n\
+                   3. OMP + AVX加速实现; \n\
+                   4. CUDA + AVX + Socket加速实现; \n\
+                   5. OMP + AVX + Socket加速实现; \n\
+                   6. 退出. \n\
                    请输入选项: ";
         wcin >> main_entered;
-        if (main_entered == 4) break;
+        if (main_entered == 6) break;
 
         switch (main_entered)
         {
@@ -45,7 +47,7 @@ int main()
             {
                 // 执行
                 start_time = system_clock::now();
-                retValue = maxNaive(rawFloatData, (size_t)DUAL_DATANUM);        // 原始代码实现
+                retValue = maxNaive(rawFloatData, (size_t)DUAL_DATANUM);  // 原始代码实现
                 end_time = system_clock::now();
                 diff = end_time - start_time;
                 durationSecond = diff.count();
@@ -54,12 +56,15 @@ int main()
                 wcout << L"; 最大值为: " << fixed << retValue << endl;
             }
             break;
-        case 2:
+        case 2:  // 2, 3 代码雷同, 因此简化
+            // [[fallthrough]];
+        case 3:
             for (size_t iter = 1; iter <= 5; iter++)
             {
                 // 执行
                 start_time = system_clock::now();
-                retValue = maxSpeedUp(rawFloatData, (size_t)DUAL_DATANUM);      // CUDA加速
+                if (main_entered == 2) retValue = maxSpeedup_Cu(rawFloatData, (size_t)DUAL_DATANUM);  // CUDA加速
+                else if (main_entered == 3) retValue = maxSpeedup_OP(rawFloatData, (size_t)DUAL_DATANUM);  // OMP加速
                 end_time = system_clock::now();
                 diff = end_time - start_time;
                 durationSecond = diff.count();
@@ -68,7 +73,9 @@ int main()
                 wcout << L"; 最大值为: " << fixed << retValue << endl;
             }
             break;
-        case 3:
+        case 4:  // 4, 5 代码雷同, 因此简化
+            // [[fallthrough]];
+        case 5:
             // 多机准备
             int socket_type;                        // 通信类型: 1 = 服务器; 2 = 客户端
             char* socket_ip;                        // Socket IP
@@ -115,8 +122,9 @@ int main()
                     start_time = system_clock::now();
                     // 发送执行命令至客户端
                     SendInt(socketconfig, 1001);
-                    // 执行己方计算
-                    locRetValue = maxSpeedUp(locFloatData, (size_t)SGLE_DATANUM);      // CUDA加速
+                    // 执行己方计算(分类讨论)
+                    if (main_entered == 4) locRetValue = maxSpeedup_Cu(locFloatData, (size_t)SGLE_DATANUM);  // CUDA加速
+                    else if (main_entered == 5) locRetValue = maxSpeedup_OP(locFloatData, (size_t)SGLE_DATANUM);  // OMP加速
                     // 发送己方数据
                     SendFloat(socketconfig, locRetValue);
                     // 等待对方结果
@@ -152,8 +160,12 @@ int main()
                     start_time = system_clock::now();
                     // 接收来自服务器的执行命令
                     socketRetStatus = RecvInt(socketconfig);
-                    // 执行己方计算
-                    if (socketRetStatus == 1001) locRetValue = maxSpeedUp(locFloatData, (size_t)SGLE_DATANUM);  // CUDA加速
+                    // 执行己方计算(分类讨论)
+                    if (socketRetStatus == 1001)
+                    {
+                        if (main_entered == 4) locRetValue = maxSpeedup_Cu(locFloatData, (size_t)SGLE_DATANUM);  // CUDA加速
+                        else if (main_entered == 5) locRetValue = maxSpeedup_OP(locFloatData, (size_t)SGLE_DATANUM);  // OMP加速
+                    }
                     // 发送己方数据
                     SendFloat(socketconfig, locRetValue);
                     // 等待对方结果

@@ -51,10 +51,10 @@ float sumWithAVX(float* data, size_t len)
     // 计算
     intptr_t simd_speedup = 32 / sizeof(float);
     intptr_t m256_num_elems = len / simd_speedup;
-    intptr_t rest_offest = (m256_num_elems - 1) * simd_speedup;
+    intptr_t rest_offest = m256_num_elems * simd_speedup;
     intptr_t naive_num_elems = len - rest_offest;
     // 初始化
-    float restSumData = 0.0f;
+    float retValue = 0.0f;
 
     // 加速对齐的完整元素
     __declspec(align(MEMORY_ALIGNED)) __m256 simd_sum_result;
@@ -71,13 +71,10 @@ float sumWithAVX(float* data, size_t len)
     // 写回(可直接写回!)
     _mm256_store_ps((float*)(simdPtr_now_elems + m256_num_elems - 1), simd_sum_result);
 
-    // 计算剩下的元素
-    for (intptr_t iter_rest = len - 1; iter_rest >= rest_offest; iter_rest--)
-    {
-        restSumData += data[iter_rest];
-    }
+    // 计算剩下的元素, 归并法
+    retValue = sumHarvest(data + rest_offest - simd_speedup, simd_speedup, data + rest_offest, naive_num_elems);
 
-    return restSumData;
+    return retValue;
 }
 
 
@@ -95,11 +92,11 @@ float sumWithOMPAVX(const float* data, size_t len)
     intptr_t rest_offest = m256_num_elems * simd_speedup;
     intptr_t naive_num_elems = len - rest_offest + (OMP_THREADS * simd_speedup);
     // 初始化
-    float restSumElem = 0.0f;
+    float retValue = 0.0f;
     float* restSumData;
     if (naive_num_elems > 0) restSumData = (float*)_aligned_malloc(naive_num_elems * sizeof(float), MEMORY_ALIGNED);
-    else return restSumElem;
-    if (restSumData != nullptr)
+    else return retValue;
+    if (restSumData != nullptr)  // 防止编译器报错
     {
         // 复制剩余元素
         memcpy_s(restSumData + (OMP_THREADS * simd_speedup), (len - (size_t)rest_offest) * sizeof(float),
@@ -110,7 +107,7 @@ float sumWithOMPAVX(const float* data, size_t len)
             restSumData[iter_logsqrt] = log(sqrt(restSumData[iter_logsqrt]));
         }
     }
-    else return restSumElem;
+    else return retValue;
 
     // 加速对齐的完整元素
     __declspec(align(MEMORY_ALIGNED)) __m256 simd_sum_result;
@@ -121,7 +118,7 @@ float sumWithOMPAVX(const float* data, size_t len)
     simd_sum_result = _mm256_set1_ps(0.0f);
     // 计算
     // 并行化
-#pragma omp parallel for num_threads(OMP_THREADS) firstprivate(simd_sum_result) private(simd_current_elem) shared(simdPtr_now_elems, m256_num_elems)
+#pragma omp parallel for num_threads(OMP_THREADS) firstprivate(simd_sum_result) private(simd_current_elem) shared(simdPtr_now_elems, m256_num_elems, simd_sum_array)
     for (intptr_t iter_simd_max = 0; iter_simd_max < m256_num_elems; iter_simd_max++)
     {
         simd_current_elem = _mm256_load_ps((const float*)(simdPtr_now_elems + iter_simd_max));
@@ -131,15 +128,64 @@ float sumWithOMPAVX(const float* data, size_t len)
         _mm256_store_ps((float*)(simd_sum_array + omp_get_thread_num()), simd_sum_result);
     }
 
-    // 规约, 计算剩下的元素
+    // 计算剩下的元素, 归并法
     if (restSumData != nullptr && naive_num_elems > 0)
     {
-        for (intptr_t iter_rest = 0; iter_rest < naive_num_elems; iter_rest++)
-        {
-            restSumElem += restSumData[iter_rest];
-        }
-        // 释放内存
-        _aligned_free(restSumData);  // 对应对齐
+        retValue = sumHarvest(restSumData, OMP_THREADS * simd_speedup, restSumData + (OMP_THREADS * simd_speedup), len - rest_offest);
+        _aligned_free(restSumData);  // 释放内存, 对应对齐
     }
-    return restSumElem;
+
+    return retValue;
+}
+
+
+float sumHarvest(const float* longData, intptr_t longLen, const float* shortData, intptr_t shortLen)
+{
+    // 准备中间数组, 直接使用2的整数幂
+    intptr_t paddingSize = fastIntPowCeil(longLen);
+    if (paddingSize == 0 || longLen < shortLen) return 0;
+
+    float* data = new float[paddingSize];
+    float retValue = 0.0f;
+    memcpy(data, longData, longLen * sizeof(float));
+    memset(data + longLen, 0, (paddingSize - longLen)*sizeof(float));
+    for (intptr_t iter_init = 0; iter_init < shortLen; iter_init++)
+    {
+        data[iter_init] += shortData[iter_init];
+    }
+
+    // 归并法合并, 误差最小!
+    float* dataA = data;
+    float* dataB = data;
+    for (intptr_t mergeSize = paddingSize >> 1; mergeSize > 0; mergeSize >>= 1)
+    {
+        dataB = data + mergeSize;
+        for (intptr_t iter_i = 0; iter_i < mergeSize; iter_i++)
+        {
+            dataA[iter_i] += dataB[iter_i];
+        }
+    }
+
+    retValue = dataA[0];
+    delete[] data;
+    return retValue;
+}
+
+
+intptr_t fastIntPowCeil(intptr_t x)
+{
+    float fx;
+    unsigned long ix, exp;
+    intptr_t retValue;
+
+    // 快速取整数的2的对数
+    fx = (float)x;
+    ix = *(unsigned long*)&fx;
+    exp = (ix >> 23) & 0xFF;
+
+    retValue = (intptr_t)(exp - 127);
+
+    if ((((intptr_t)1 << retValue) - x) != 0) retValue += 1;
+    // 返回此时尺寸
+    return ((intptr_t)1) << retValue;
 }

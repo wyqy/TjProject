@@ -24,11 +24,11 @@ __host__ cudaError_t initialCuda(int device, float* arrRaw, size_t lenRaw, float
     }
 
     // 初始化锁页内存
-    cudaStatus = cudaHostRegister(arrRaw, lenRaw * sizeof(float), cudaHostAllocDefault);
+    cudaStatus = cudaHostRegister(arrRaw, lenRaw * sizeof(float), cudaHostAllocPortable);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "\n[Error] cudaHostRegister for arrRaw failed!\n");
     }
-    cudaStatus = cudaHostRegister(arrLoc, lenLoc * sizeof(float), cudaHostAllocDefault);
+    cudaStatus = cudaHostRegister(arrLoc, lenLoc * sizeof(float), cudaHostAllocPortable);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "\n[Error] cudaHostRegister for arrLoc failed!\n");
     }
@@ -99,8 +99,9 @@ __host__ cudaError_t sortWithCuda(float* data, size_t len)
 
     // 开始排序
     // 运行sort辅助函数
-    bitonicSort(gpuMem, (unsigned int)paddedDataLen, &cudaStatus);
+    bitonicSort(gpuMem, (unsigned int)paddedDataLen);
     // 检查函数执行错误
+    cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "\n[Error] sort failed!\n");
         goto Error;
@@ -175,7 +176,7 @@ __host__ size_t fastIntLog(size_t x)
 }
 
 
-__host__ void bitonicSort(float* data, unsigned int len, cudaError_t* cudaRetValue)
+__host__ void bitonicSort(float* data, unsigned int len)
 {
     unsigned int iter_i, iter_j;
 
@@ -197,17 +198,16 @@ __host__ void bitonicSort(float* data, unsigned int len, cudaError_t* cudaRetVal
             // 操作3
             // 运行sort kernel
             sortKernel <<<dimGrid , dimBlock, sharedMemSize>>> (data, iter_i, iter_j);
-            // 检查kernel执行错误
-            cudaStatus = cudaGetLastError();
-            if (cudaStatus != cudaSuccess) {
-                fprintf(stderr, "\n[Error] kernel launching failed: %s @ %d, %d!\n", cudaGetErrorString(cudaStatus), dimGrid.x, dimBlock.x);
-                *cudaRetValue = cudaErrorInvalidValue;
-            }
+            // // 检查kernel执行错误(debug)
+            // cudaStatus = cudaGetLastError();
+            // if (cudaStatus != cudaSuccess) {
+            //     fprintf(stderr, "\n[Error] kernel launching failed: %s @ %d, %d!\n", cudaGetErrorString(cudaStatus), dimGrid.x, dimBlock.x);
+            //     *cudaRetValue = cudaErrorInvalidValue;
+            // }
             // 等待kernel执行完成
             cudaStatus = cudaDeviceSynchronize();
             if (cudaStatus != cudaSuccess) {
                 fprintf(stderr, "\n[Error] cudaDeviceSynchronize returned error code %d after launching kernel!\n", cudaStatus);
-                *cudaRetValue = cudaErrorInvalidValue;
             }
         }
     }

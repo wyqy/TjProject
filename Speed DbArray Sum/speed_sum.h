@@ -32,3 +32,6 @@ float sumWithAVX(float* data, size_t len);
 float sumSpeedup_OP(const float data[], const size_t len);
 float sumWithOMPAVX(const float* data, size_t len);
 
+// ¶¨Òå¸¨Öúº¯Êý
+float sumHarvest(const float* longData, intptr_t longLen, const float* shortData, intptr_t shortLen);
+intptr_t fastIntPowCeil(intptr_t x);

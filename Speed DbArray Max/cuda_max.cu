@@ -1,6 +1,6 @@
 #include "cuda_max.cuh"
 
-__host__ cudaError_t initialCuda(int device)
+__host__ cudaError_t initialCuda(int device, float* arrRaw, size_t lenRaw, float* arrLoc, size_t lenLoc)
 {
     // 初始化CUDA设备, 线程级别!
     cudaError_t cudaStatus;
@@ -15,6 +15,16 @@ __host__ cudaError_t initialCuda(int device)
     cudaStatus = cudaSetDevice(device);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "\n[Error] cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?\n");
+    }
+
+    // 初始化锁页内存
+    cudaStatus = cudaHostRegister(arrRaw, lenRaw * sizeof(float), cudaHostAllocMapped);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "\n[Error] cudaHostRegister for arrRaw failed!\n");
+    }
+    cudaStatus = cudaHostRegister(arrLoc, lenLoc * sizeof(float), cudaHostAllocMapped);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "\n[Error] cudaHostRegister for arrLoc failed!\n");
     }
 
     return cudaStatus;

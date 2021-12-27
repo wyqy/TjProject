@@ -19,7 +19,7 @@ __host__ size_t paddingSize(size_t len);
 __host__ size_t fastIntLog(size_t x);
 
 // ÅÅÐòµ÷ÓÃ
-__host__ void bitonicSort(float* data, unsigned int len, cudaError_t* cudaRetValue);
+__host__ void bitonicSort(float* data, unsigned int len);
 
 // CUDA Kernel
 __global__ void sortKernel(float* data, unsigned int iter_i, unsigned int iter_j);
