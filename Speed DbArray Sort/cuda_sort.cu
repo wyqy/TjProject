@@ -155,7 +155,7 @@ __host__ size_t paddingSize(size_t len)
 
     // 考虑thread block的大小, 扩充为至少一个block
     // 计算内存size
-    retValue = retValue > BLOCK_DIMONE_x512 ? retValue : BLOCK_DIMONE_x512;
+    retValue = retValue > BLOCK_DIMONE_x128 ? retValue : BLOCK_DIMONE_x128;
 
     // 返回
     return retValue;
@@ -180,14 +180,12 @@ __host__ void bitonicSort(float* data, unsigned int len)
 {
     unsigned int iter_i, iter_j;
 
-    dim3 dimGrid(1);
-    dim3 dimBlock(BLOCK_DIMONE_x512);
-    unsigned int sharedMemSize = BLOCK_DIMONE_x512 * sizeof(float);  // 只缓存(操作数的)一半
+    // 计算运行配置数(确定是BLOCK_DIMONE_x的倍数)
+    dim3 dimGrid(len / BLOCK_DIMONE_x128);
+    dim3 dimBlock(BLOCK_DIMONE_x128);
+    unsigned int sharedMemSize = BLOCK_DIMONE_x128 * sizeof(float);  // 只缓存(操作数的)一半
 
     cudaError_t cudaStatus;
-
-    // 计算运行配置数(确定是512的倍数)
-    dimGrid.x = len / BLOCK_DIMONE_x512;
 
     
     // 排序(原理详见前)
@@ -217,8 +215,8 @@ __host__ void bitonicSort(float* data, unsigned int len)
 __global__ void sortKernel(float* data, unsigned int iter_i, unsigned int iter_j)
 {
     extern __shared__ int sharedMem[];  // 共享内存
-    unsigned int share_k = threadIdx.x * WRAP_DIM;
-                 share_k = share_k / BLOCK_DIMONE_x512 + share_k % BLOCK_DIMONE_x512;  // 计算共享内存调用位置, 避免bank conflict
+    unsigned int share_k = threadIdx.x << WRAP_DIMLOG;
+                 share_k = (share_k >> BLOCK_DIMONE_xLOG) + (share_k & (BLOCK_DIMONE_x128 - 1));  // 计算共享内存调用位置, 避免bank conflict
     unsigned int iter_k = blockIdx.x * blockDim.x + threadIdx.x;  // 获得当前元素
     unsigned int dual_k = iter_j ^ iter_k;  // 或运算, 获得对偶元素位置
         // 由于iter_j只有一位为1, 其它均为0, 异或0得原元素, 异或1得反元素, 因此正好为需要变换的元素地址对应位
@@ -232,6 +230,7 @@ __global__ void sortKernel(float* data, unsigned int iter_i, unsigned int iter_j
         if ((iter_k & iter_i) == 0)  // 与运算, 得到现在是双调的哪一单调区
             // 由于iter_i只有一位为1, 因此若结果为0则原元素在低双调区, 为1则在高双调区
         {  // 低双调区, 设为MIN区, 则排序结果单调递增
+            // if (data[iter_k] > sharedMem[share_k])
             if (logf(sqrtf(data[iter_k])) > logf(sqrtf(sharedMem[share_k])))
             {
                 // 交换元素位置
@@ -242,6 +241,7 @@ __global__ void sortKernel(float* data, unsigned int iter_i, unsigned int iter_j
         }
         else
         {  // 高双调区, 设为MAX区, 则排序结果单调递增
+            // if (data[iter_k] < sharedMem[share_k])
             if (logf(sqrtf(data[iter_k])) < logf(sqrtf(sharedMem[share_k])))
             {
                 // 交换元素位置

@@ -5,8 +5,9 @@
 using std::max;
 
 // 定义宏
-#define BLOCK_DIMONE_pow9 ((unsigned int)9)
-#define BLOCK_DIMONE_x512 ((unsigned int)512)
+#define BLOCK_DIMONE_xLOG ((unsigned int)7)
+#define BLOCK_DIMONE_x128 ((unsigned int)128)
+#define WRAP_DIMLOG ((unsigned int)5)
 #define WRAP_DIM ((unsigned int)32)
 
 // 调用函数
