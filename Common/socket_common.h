@@ -13,7 +13,7 @@
 // socket 参数
 #define BACKLOG 0x1000  // #define BACKLOG SOMAXCONN
 // 多线程同步看门狗
-#define MAXWAITING_MS  ((DWORD)0xffff)
+#define MAXWAITING_MS  ((DWORD)0xfffff)
 // 发送/接收数据格式
 #define COMMAND_FLOAT   ((int)1812)
 #define COMMAND_INT     ((int)1824)

@@ -250,11 +250,14 @@ int main()
                 // 多机准备
                 // 发送初始化命令至客户端
                 SendInt(socketconfig, 2000);
+                printf("\nSuccess Send 2000");
                 // 己方初始化
                 retValue = init_arithmetic(locFloatData, (float)1, SGLE_DATANUM);  // 初始化多机数据!
+                printf("\nSuccess Inited");
                 // 等待对方结果
                 socketRetStatus = RecvInt(socketconfig);
                 if (socketRetStatus != 2000) break;
+                printf("\nSuccess Recv 2000");
 
                 for (size_t iter = 1; iter <= 2; iter++)
                 {
@@ -262,10 +265,13 @@ int main()
                     start_time = system_clock::now();
                     // 发送执行命令至客户端
                     SendInt(socketconfig, 2001);
+                    printf("\nSuccess Send 2001");
                     // 发送己方数据
                     SendFloatPtr(socketconfig, locFloatData, SGLE_DATANUM);
+                    printf("\nSuccess Send!");
                     // 等待对方结果
                     socketRetStatus = RecvFloatPtr(socketconfig, rmtFloatData);
+                    printf("\nSuccess Recv!\n");
                     // 验证最后一个数
                     retValue = rmtFloatData[SGLE_DATANUM - 1];
                     // 计算完毕
@@ -278,6 +284,7 @@ int main()
                     // 接收同步指令
                     socketRetStatus = RecvInt(socketconfig);
                     if (socketRetStatus != 2002) break;
+                    printf("\nSuccess Recv 2002");
                 }
             }
             else if (socket_type == 2)
@@ -286,10 +293,12 @@ int main()
                 // 接收来自服务器的初始化命令
                 socketRetStatus = RecvInt(socketconfig);
                 if (socketRetStatus != 2000) break;
+                printf("\nSuccess Recv 2000");
                 // 己方初始化
                 retValue = init_arithmetic(locFloatData, (float)SGLE_DATANUM, SGLE_DATANUM);  // 初始化多机数据!
                 // 发送己方结果
                 SendInt(socketconfig, 2000);
+                printf("\nSuccess Send 2000");
 
                 for (size_t iter = 1; iter <= 2; iter++)
                 {
@@ -298,10 +307,13 @@ int main()
                     // 接收来自服务器的执行命令
                     socketRetStatus = RecvInt(socketconfig);
                     if (socketRetStatus != 2001) break;
+                    printf("\nSuccess Recv 2001");
                     // 发送己方数据
                     SendFloatPtr(socketconfig, locFloatData, SGLE_DATANUM);
+                    printf("\nSuccess Send!");
                     // 等待对方结果
                     socketRetStatus = RecvFloatPtr(socketconfig, rmtFloatData);
+                    printf("\nSuccess Recv!\n");
                     // 验证最后一个数
                     retValue = rmtFloatData[SGLE_DATANUM - 1];
                     // 计算完毕
@@ -313,11 +325,13 @@ int main()
                     wcout << L"; 结果为(应当为64M): " << fixed << retValue << endl;
                     // 发送同步指令
                     SendInt(socketconfig, 2002);
+                    printf("\nSuccess Send 2002");
                 }
             }
 
             delete[] socket_ip;  // 释放堆内存
             CloseSocket(socketconfig);  // 关闭Socket
+            printf("\n");
             break;
         default:
             durationSecond = 0;
