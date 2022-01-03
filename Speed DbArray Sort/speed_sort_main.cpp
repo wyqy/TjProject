@@ -12,6 +12,7 @@ int main()
     bool isValid = 0;
     float retValue = 0;
     double durationSecond = 0;
+    double computationSecond = 0;
 
     // 计时变量
     system_clock::time_point start_time;
@@ -155,6 +156,10 @@ int main()
                     SendInt(socketconfig, 1001);
                     // 执行己方计算
                     retValue = sortSpeedup(locFloatData, (size_t)SGLE_DATANUM);  // 加速代码实现
+                    // 记录本地计算时间
+                    end_time = system_clock::now();
+                    diff = end_time - start_time;
+                    computationSecond = diff.count();
                     // 等待对方结果
                     socketRetStatus = RecvFloatPtr(socketconfig, rmtFloatData);
                     // 合并
@@ -164,7 +169,7 @@ int main()
                     diff = end_time - start_time;
                     durationSecond = diff.count();
                     // 显示速度
-                    wcout << L"第" << iter << L"次: 耗时(秒): " << durationSecond << L"; 验证中...";
+                    wcout << L"第" << iter << L"次: 本地计算耗时(秒): " << computationSecond << L"; 总耗时(秒): " << durationSecond << L"; 验证中...";
                     // 验证结果
                     retValue = postSpeedup(rawFloatData, DUAL_DATANUM);
                     isValid = validSort(rawFloatData, (size_t)DUAL_DATANUM);  // 验证
